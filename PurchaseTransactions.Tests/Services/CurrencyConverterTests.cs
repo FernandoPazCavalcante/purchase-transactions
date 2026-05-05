@@ -18,8 +18,7 @@ public class CurrencyConverterTests
   private static PurchaseTransaction Tx(decimal amount = 100m, DateTime? date = null) => PurchaseTransaction.Create(
     "lunch",
     amount,
-    // add date -3 months by default to avoid "older than 6 months" error in tests
-    date ?? DateTime.UtcNow.AddMonths(-3)
+    date ?? DateTime.UtcNow.AddMonths(-1)
   );
 
   [Fact]
@@ -41,9 +40,10 @@ public class CurrencyConverterTests
   [Fact]
   public async Task Convert_UsesOlderRate_WhenWithinSixMonths()
   {
-    var tx = Tx(date: DateTime.UtcNow.AddMonths(-5));
+    var tx = Tx(date: DateTime.UtcNow.AddMonths(-1));
+    var rateDate = tx.Date.AddMonths(-4);
     _rates.GetLatestRateAsync("X", tx.Date, Arg.Any<CancellationToken>())
-          .Returns(new ExchangeRate("X", DateTime.UtcNow.AddMonths(-5), 2m));// ~5mo old
+          .Returns(new ExchangeRate("X", rateDate, 2m));
 
     var result = await _sut.ConvertAsync(tx, "X", default);
 
@@ -52,16 +52,43 @@ public class CurrencyConverterTests
   }
 
   [Fact]
-  public async Task Convert_WhenRateOlderThanSixMonths_ReturnsError()
+  public async Task Convert_AcceptsRateExactlySixMonthsBeforePurchaseDate()
   {
-    var tx = Tx(date: new DateTime(2025, 6, 15));
+    var tx = Tx(date: DateTime.UtcNow.AddMonths(-1));
+    var rateDate = tx.Date.AddMonths(-6);
     _rates.GetLatestRateAsync("X", tx.Date, Arg.Any<CancellationToken>())
-          .Returns(new ExchangeRate("X", new DateTime(2024, 12, 14), 2m)); // >6mo
+          .Returns(new ExchangeRate("X", rateDate, 2m));
+
+    var result = await _sut.ConvertAsync(tx, "X", default);
+
+    result.Ok.Should().BeTrue();
+  }
+
+  [Fact]
+  public async Task Convert_RejectsRateOneDayOutsideSixMonthWindow()
+  {
+    var tx = Tx(date: DateTime.UtcNow.AddMonths(-1));
+    var rateDate = tx.Date.AddMonths(-6).AddDays(-1);
+    _rates.GetLatestRateAsync("X", tx.Date, Arg.Any<CancellationToken>())
+          .Returns(new ExchangeRate("X", rateDate, 2m));
 
     var result = await _sut.ConvertAsync(tx, "X", default);
 
     result.Ok.Should().BeFalse();
-    result.Error.Should().Contain($"Transaction date {tx.Date:yyyy-MM-dd} is older than 6 months");
+    result.Error.Should().Contain("the purchase cannot be converted to X");
+  }
+
+  [Fact]
+  public async Task Convert_AcceptsAncientPurchaseWhenRateNearPurchaseDate()
+  {
+    var tx = Tx(date: DateTime.UtcNow.AddYears(-2));
+    var rateDate = tx.Date.AddMonths(-3);
+    _rates.GetLatestRateAsync("X", tx.Date, Arg.Any<CancellationToken>())
+          .Returns(new ExchangeRate("X", rateDate, 2m));
+
+    var result = await _sut.ConvertAsync(tx, "X", default);
+
+    result.Ok.Should().BeTrue();
   }
 
   [Fact]
@@ -74,13 +101,13 @@ public class CurrencyConverterTests
     var result = await _sut.ConvertAsync(tx, "Nowhere", default);
 
     result.Ok.Should().BeFalse();
-    result.Error.Should().Contain($"No exchange rate found for Nowhere on {tx.Date:yyyy-MM-dd}");
+    result.Error.Should().Contain("the purchase cannot be converted to Nowhere");
   }
 
   [Theory]
-  [InlineData(10.00, 0.123456, 1.23)]   // 1.23456 → 1.23
+  [InlineData(10.00, 0.123456, 1.23)]
   [InlineData(10.00, 0.125000, 1.25)]
-  [InlineData(10.00, 0.126500, 1.27)]   // 1.265 → 1.27 (away from zero)
+  [InlineData(10.00, 0.126500, 1.27)]
   [InlineData(33.33, 3.14159, 104.71)]
   public async Task Convert_RoundsToTwoDecimals_AwayFromZero(decimal usd, decimal rate, decimal expected)
   {

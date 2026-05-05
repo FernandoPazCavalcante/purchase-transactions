@@ -49,24 +49,7 @@ HTTP 404
 GET {{host}}/api/transactions/{{tx_id}}/convert?currency=Atlantis-Doubloon
 HTTP 422
 [Asserts]
-jsonpath "$.error" exists
-
-# ---------- convert: tx older than 6 months -> 422 ----------
-POST {{host}}/api/transactions
-Content-Type: application/json
-{
-  "description": "old",
-  "date": "2025-01-01T00:00:00Z",
-  "amountUsd": 10.00
-}
-HTTP 201
-[Captures]
-old_tx_id: jsonpath "$.id"
-
-GET {{host}}/api/transactions/{{old_tx_id}}/convert?currency=Brazil-Real
-HTTP 422
-[Asserts]
-jsonpath "$.error" contains "older than 6 months"
+jsonpath "$.error" contains "the purchase cannot be converted to Atlantis-Doubloon"
 
 # ---------- validation: empty description ----------
 POST {{host}}/api/transactions
