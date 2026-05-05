@@ -60,3 +60,42 @@ jobs:
           name: test-results
           path: "**/TestResults/**/*.trx"
           if-no-files-found: ignore
+
+  e2e:
+    name: E2E (hurl)
+    runs-on: ubuntu-latest
+    needs: build-test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install hurl
+        uses: gacts/install-hurl@v1
+
+      - name: Start stack
+        run: docker compose up -d --build
+
+      - name: Wait for API health
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8080/api/health > /dev/null; then
+              echo "API healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API did not become healthy"
+          docker compose logs
+          exit 1
+
+      - name: Run hurl tests
+        run: hurl --test --location e2e/api.hurl
+
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
