@@ -21,8 +21,8 @@ public class CurrencyConverter(ITreasuryRatesClient rates) : ICurrencyConverter
 
     var convertedTransaction = new ConvertedTransactionDTO(
       tx.Id,
-      string.Empty,
-      DateTime.UtcNow,
+      tx.Description,
+      tx.Date,
       tx.AmountUsd,
       rate.Rate,
       converted

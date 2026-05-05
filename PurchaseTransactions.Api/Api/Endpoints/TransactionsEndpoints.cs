@@ -12,11 +12,32 @@ public static class TransactionsEndpoints
   {
     var api = app.MapGroup("/api/transactions");
 
-    api.MapGet("/{id:guid}", (Guid id) => Results.Ok())
-       .WithName("GetTransaction");
+    api.MapGet("/{id:guid}", async (
+        Guid id,
+        IPurchaseTransactionRepository repository,
+        CancellationToken cancellationToken) =>
+    {
+      var transaction = await repository.GetByIdAsync(id, cancellationToken);
+      return transaction is null ? Results.NotFound() : Results.Ok(transaction);
+    })
+    .WithName("GetTransaction");
 
-    api.MapGet("/{id:guid}/convert", (Guid id, [FromQuery] string currency) => Results.Ok())
-       .WithName("ConvertTransaction");
+    api.MapGet("/{id:guid}/convert", async (
+        Guid id,
+        [FromQuery] string currency,
+        IPurchaseTransactionRepository repository,
+        ICurrencyConverter converter,
+        CancellationToken cancellationToken) =>
+    {
+      var transaction = await repository.GetByIdAsync(id, cancellationToken);
+      if (transaction is null) return Results.NotFound();
+
+      var result = await converter.ConvertAsync(transaction, currency, cancellationToken);
+      return result.Ok
+        ? Results.Ok(result.Value)
+        : Results.UnprocessableEntity(new { error = result.Error });
+    })
+    .WithName("ConvertTransaction");
 
     api.MapPost("/", async (
         [FromBody] CreateTransactionDTO payload,
