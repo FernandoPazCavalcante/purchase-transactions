@@ -109,6 +109,4 @@ GitHub Actions runs build, lint, and tests on push and pull requests targeting
 
 ## AI usage disclosure
 
-I used an AI assistant to help produce a plan for the tests, a plan for
-refactoring my initial code into a layered architecture, and to draft this
-README itself. The implementation, decisions, and final code are my own.
+I used an AI assistant to help produce a plan for the tests, a plan to reorganize my initial code into the layered architecture I had decided to adopt, and to draft this README itself. The implementation, decisions, and final code are my own.
