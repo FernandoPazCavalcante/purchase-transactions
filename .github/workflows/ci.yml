@@ -70,27 +70,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install hurl
-        uses: gacts/install-hurl@v1
-
-      - name: Start stack
-        run: docker compose up -d --build
-
-      - name: Wait for API health
-        run: |
-          for i in {1..30}; do
-            if curl -fsS http://localhost:8080/api/health > /dev/null; then
-              echo "API healthy"
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "API did not become healthy"
-          docker compose logs
-          exit 1
-
-      - name: Run hurl tests
-        run: hurl --test --location e2e/api.hurl
+      - name: Run e2e (hurl service)
+        run: docker compose --profile test up --build --abort-on-container-exit --exit-code-from hurl
 
       - name: Dump logs on failure
         if: failure()
@@ -98,4 +79,4 @@ jobs:
 
       - name: Tear down
         if: always()
-        run: docker compose down -v
+        run: docker compose --profile test down -v

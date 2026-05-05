@@ -33,5 +33,24 @@ services:
     ports:
       - "8080:8080"
 
+  hurl:
+    image: ghcr.io/orange-opensource/hurl:latest
+    container_name: purchase-transactions-hurl
+    profiles: ["test"]
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - ./e2e:/e2e:ro
+    working_dir: /e2e
+    command:
+      - --test
+      - --location
+      - --retry=30
+      - --retry-interval=1000
+      - --variable
+      - host=http://api:8080
+      - api.hurl
+
 volumes:
   db-data:
