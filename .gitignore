@@ -1,0 +1,60 @@
+# Build output
+bin/
+obj/
+out/
+publish/
+*.dll
+*.exe
+*.pdb
+
+# Rider / Visual Studio / VSCode
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userprefs
+
+# Test results / coverage
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+*.trx
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+project.lock.json
+project.fragment.lock.json
+
+# .NET tools
+.dotnet/
+
+# Logs
+*.log
+logs/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+*.pfx
+*.key
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.docker/
+
+# mise / asdf
+.mise.local.toml
+.tool-versions
+
+# Claude / agents
+.claude/

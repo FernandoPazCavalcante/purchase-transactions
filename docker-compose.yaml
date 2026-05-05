@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: purchase-transactions-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: purchase_transactions
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d purchase_transactions"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: purchase-transactions-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__Default: "Host=db;Port=5432;Database=purchase_transactions;Username=app;Password=app"
+    ports:
+      - "8080:8080"
+
+volumes:
+  db-data:

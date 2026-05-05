@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="PurchaseTransactions.Api/PurchaseTransactions.Api.csproj" />
+  <Project Path="PurchaseTransactions.Tests/PurchaseTransactions.Tests.csproj" />
+</Solution>

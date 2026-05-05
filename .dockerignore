@@ -1,0 +1,16 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+**/.idea/
+**/*.user
+**/*.suo
+**/*.DotSettings*
+.git
+.gitignore
+.dockerignore
+docker-compose*.yaml
+docker-compose*.yml
+Dockerfile*
+README.md
+mise.toml
